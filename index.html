@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keywords Analysis Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; padding-right: 2.5rem; }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-container" class="min-h-screen flex items-center justify-center p-8">
+        <div class="glass-panel p-8 rounded-2xl w-full max-w-md">
+            <h1 class="text-2xl font-bold text-white mb-6 text-center">Login to Dashboard</h1>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Email</label>
+                    <input type="email" id="login-email" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Password</label>
+                    <input type="password" id="login-password" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 transition-colors">
+                </div>
+                <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-500/20 mt-4">
+                    Sign In
+                </button>
+                <p id="login-error" class="text-red-400 text-sm mt-2 text-center hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard (Hidden by default) -->
+    <div id="dashboard-container" class="min-h-screen p-8 hidden">
+    <div id="app" class="max-w-7xl mx-auto space-y-6">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Keywords Analysis</h1>
+                <button id="btn-logout" class="text-slate-400 hover:text-white text-sm">Logout</button>
+                <p class="text-slate-400 mt-1">Domain: answers-fast.com</p>
+            </div>
+            <div id="loading" class="text-emerald-400 animate-pulse font-medium">Loading data...</div>
+        </header>
+
+        <!-- Filters -->
+        <div class="glass-panel p-6 rounded-xl flex flex-wrap gap-4 items-end">
+            <div class="flex gap-2 items-end">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Date Range</label>
+                    <input type="text" id="filter-date-range" placeholder="Select Dates..." class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 hover:border-slate-500 transition-colors w-64">
+                </div>
+                <div class="pb-[1px]">
+                    <button id="btn-apply-filters" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-blue-500/20 h-[42px]">
+                        Apply Dates
+                    </button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Buyer</label>
+                <select id="filter-buyer" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 hover:border-slate-500 transition-colors">
+                    <option value="all">All Buyers</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Traffic Source</label>
+                <select id="filter-traffic" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 hover:border-slate-500 transition-colors">
+                    <option value="all">All Sources</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-400 mb-1">Segment</label>
+                <select id="filter-segment" class="bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 hover:border-slate-500 transition-colors">
+                    <option value="all">All Segments</option>
+                </select>
+            </div>
+            <div class="flex-grow">
+                <label class="block text-sm font-medium text-slate-400 mb-1">Search Keyword</label>
+                <input type="text" id="filter-keyword" placeholder="Search..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 hover:border-slate-500 transition-colors">
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="glass-panel p-6 rounded-xl border-t-4 border-t-emerald-500 hover:bg-slate-800/50 transition-colors cursor-default">
+                <h3 class="text-slate-400 text-sm font-medium">Net Revenue</h3>
+                <p id="kpi-revenue" class="text-3xl font-bold mt-2 text-white">$0.00</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-t-4 border-t-blue-500 hover:bg-slate-800/50 transition-colors cursor-default">
+                <h3 class="text-slate-400 text-sm font-medium">Sellside Clicks</h3>
+                <p id="kpi-clicks" class="text-3xl font-bold mt-2 text-white">0</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-t-4 border-t-purple-500 hover:bg-slate-800/50 transition-colors cursor-default">
+                <h3 class="text-slate-400 text-sm font-medium">Sellside Searches</h3>
+                <p id="kpi-searches" class="text-3xl font-bold mt-2 text-white">0</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-t-4 border-t-amber-500 hover:bg-slate-800/50 transition-colors cursor-default">
+                <h3 class="text-slate-400 text-sm font-medium">Widget Searches</h3>
+                <p id="kpi-widget" class="text-3xl font-bold mt-2 text-white">0</p>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="glass-panel rounded-xl overflow-hidden shadow-xl">
+            <div class="p-6 border-b border-slate-700/50">
+                <h2 class="text-xl font-semibold">Keywords by Company</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-slate-800/80 text-slate-300">
+                        <tr>
+                            <th class="px-6 py-4 font-medium">Company / Keyword</th>
+                            <th class="px-6 py-4 font-medium text-right">Revenue</th>
+                            <th class="px-6 py-4 font-medium text-right">Clicks</th>
+                            <th class="px-6 py-4 font-medium text-right">RPC</th>
+                            <th class="px-6 py-4 font-medium text-right">Total Searches</th>
+                            <th class="px-6 py-4 font-medium text-right">Widget Searches</th>
+                            <th class="px-6 py-4 font-medium">Segment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-slate-700/50">
+                        <!-- Rows will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-700/50 flex justify-between items-center text-sm text-slate-400 bg-slate-800/30">
+                <span id="showing-text">Showing 0 rows</span>
+                <div class="space-x-2">
+                    <button id="btn-prev" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-50 transition-colors text-white font-medium">Previous</button>
+                    <button id="btn-next" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-50 transition-colors text-white font-medium">Next</button>
+                </div>
+            </div>
+        </div>
+    </div> <!-- End Dashboard Container -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
